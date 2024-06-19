@@ -1,46 +1,92 @@
-// src/BluetoothPeripheral.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Button, Alert, TextInput } from 'react-native';
-import Peripheral from 'react-native-peripheral';
+import Peripheral, { Service, Characteristic } from 'react-native-peripheral';
+import uuid from 'react-native-uuid';
 
 const BluetoothPeripheral = () => {
   const [advertising, setAdvertising] = useState(false);
   const [receivedPayload, setReceivedPayload] = useState('');
+  const [error, setError] = useState(null);
+
+  const serviceUUID = uuid.v4();
+  const characteristicUUID = uuid.v4();
+  const isListenerRegistered = useRef(false);
 
   useEffect(() => {
-    return () => {
-      if (advertising) {
-        Peripheral.stopAdvertising();
-      }
-    };
+    if (!isListenerRegistered.current) {
+      const handleStateChange = (state) => {
+        console.log('Bluetooth state changed:', state);
+        if (state === 'poweredOn') {
+          console.log('Bluetooth is powered on.');
+          if (!advertising) {
+            setupPeripheral();
+          }
+        } else {
+          console.log('Bluetooth is not powered on.');
+        }
+      };
+
+      Peripheral.onStateChanged(handleStateChange);
+      isListenerRegistered.current = true;
+
+      return () => {
+        // Ensure the listener is only added once
+        if (advertising) {
+          Peripheral.stopAdvertising()
+            .then(() => console.log('Stopped advertising.'))
+            .catch((err) => console.error('Failed to stop advertising:', err));
+        }
+      };
+    }
   }, [advertising]);
 
-  const startAdvertising = () => {
-    const writableCharacteristic = {
-      uuid: 'ABCD',
-      value: '',
-      permissions: ['read', 'write'],
-      properties: ['read', 'write'],
-      onWriteRequest: (device, requestId, value) => {
-        console.log('Received write request:', value);
+  const setupPeripheral = async () => {
+    if (advertising) return; // Prevent duplicate initialization
 
-        // Respond to the write request
-        Peripheral.sendResponse(device, requestId, true, value);
+    try {
+      console.log('Setting up characteristic...');
+      const characteristic = new Characteristic({
+        uuid: characteristicUUID,
+        properties: ['read', 'write', 'notify'],
+        permissions: ['readable', 'writeable'],
+        onWriteRequest: async (value, offset) => {
+          console.log('Received write request:', value);
+          await Peripheral.sendResponse(true, value);
+          Alert.alert('Payload Received', `Payload: ${value}`);
+          setReceivedPayload(value);
+        },
+      });
 
-        // Show an alert with the received payload
-        Alert.alert('Payload Received', `Payload: ${value}`);
-        setReceivedPayload(value);
-      },
-    };
+      console.log('Characteristic set up:', characteristic);
 
-    // Start advertising with the writable characteristic
-    Peripheral.startAdvertising({
-      name: 'MyPeripheral',
-      serviceUUIDs: ['1234'],
-      characteristics: [writableCharacteristic],
-    });
+      console.log('Setting up service...');
+      const service = new Service({
+        uuid: serviceUUID,
+        characteristics: [characteristic],
+      });
 
-    setAdvertising(true);
+      console.log('Adding service...');
+      await Peripheral.addService(service);
+      console.log('Service added successfully');
+
+      setTimeout(async () => {
+        console.log('Starting advertising...');
+        try {
+          await Peripheral.startAdvertising({
+            name: 'Ticket',
+            serviceUuids: [serviceUUID],
+          });
+          setAdvertising(true);
+          console.log('Advertising started successfully');
+        } catch (advertisingError) {
+          console.error('Error starting advertising:', advertisingError);
+          setError(`Advertising failed: ${advertisingError.message}`);
+        }
+      }, 1000);
+    } catch (e) {
+      setError(e.message);
+      console.error('Error setting up peripheral:', e);
+    }
   };
 
   return (
@@ -48,9 +94,10 @@ const BluetoothPeripheral = () => {
       <Text style={styles.title}>Bluetooth Peripheral</Text>
       <Button
         title={advertising ? 'Advertising...' : 'Activate'}
-        onPress={startAdvertising}
+        onPress={setupPeripheral}
         disabled={advertising}
       />
+      {error && <Text style={styles.error}>Error: {error}</Text>}
       <Text style={styles.subtitle}>Advertising with Writable Characteristic</Text>
       <TextInput
         style={styles.input}
@@ -87,6 +134,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     width: '100%',
     paddingHorizontal: 10,
+  },
+  error: {
+    color: 'red',
+    marginTop: 10,
   },
 });
 
