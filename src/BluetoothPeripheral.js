@@ -89,6 +89,16 @@ const BluetoothPeripheral = () => {
     }
   };
 
+  const checkAdvertisingStatus = async () => {
+    try {
+      const isAdvertising = await Peripheral.isAdvertising();
+      console.log('Advertising status:', isAdvertising);
+      Alert.alert('Advertising Status', `Is advertising: ${isAdvertising}`);
+    } catch (error) {
+      console.error('Error checking advertising status:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Bluetooth Peripheral</Text>
@@ -96,6 +106,10 @@ const BluetoothPeripheral = () => {
         title={advertising ? 'Advertising...' : 'Activate'}
         onPress={setupPeripheral}
         disabled={advertising}
+      />
+      <Button
+        title="Check Advertising Status"
+        onPress={checkAdvertisingStatus}
       />
       {error && <Text style={styles.error}>Error: {error}</Text>}
       <Text style={styles.subtitle}>Advertising with Writable Characteristic</Text>
