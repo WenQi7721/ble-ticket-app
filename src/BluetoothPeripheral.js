@@ -72,10 +72,11 @@ const BluetoothPeripheral = () => {
       setTimeout(async () => {
         console.log('Starting advertising...');
         try {
-          await Peripheral.startAdvertising({
-            name: 'Ticket',
+          const response = await Peripheral.startAdvertising({
+            name: 'Ticket 0.0',
             serviceUuids: [serviceUUID],
           });
+          console.log(response);
           setAdvertising(true);
           console.log('Advertising started successfully');
         } catch (advertisingError) {
