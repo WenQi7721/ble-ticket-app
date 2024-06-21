@@ -102,7 +102,7 @@ const BluetoothPeripheral = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bluetooth Peripheral</Text>
+      <Text style={styles.title}>Blsuetooth Peripheral</Text>
       <Button
         title={advertising ? 'Advertising...' : 'Activate'}
         onPress={setupPeripheral}
