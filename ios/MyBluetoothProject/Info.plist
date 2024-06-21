@@ -38,5 +38,10 @@
     <string>Location access is required to use Bluetooth peripherals.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Location access is required to use Bluetooth peripherals.</string>
+    <!-- Add the bluetooth-central background mode -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>bluetooth-central</string>
+    </array>
 </dict>
 </plist>
