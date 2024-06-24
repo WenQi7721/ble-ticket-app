@@ -72,8 +72,8 @@ const BluetoothScanner = () => {
         return;
       }
 
-      if (device && (device.name === 'Ticket')) {
-        console.log('Filtered device found:', device.name, device.id);
+      if (device) {
+        console.log('Device found:', device.name, device.id);
         setDevices((prevDevices) => {
           if (prevDevices.find((d) => d.id === device.id)) {
             return prevDevices;
@@ -82,13 +82,6 @@ const BluetoothScanner = () => {
         });
       }
     });
-
-    // Stop scan after 30 seconds
-    setTimeout(() => {
-      if (scanning) {
-        stopScan();
-      }
-    }, 30000); // 30 seconds
   };
 
   const stopScan = () => {
@@ -101,6 +94,7 @@ const BluetoothScanner = () => {
     <View style={styles.deviceContainer}>
       <Text style={styles.deviceName}>{item.name || 'Unknown Device'}</Text>
       <Text style={styles.deviceId}>{item.id}</Text>
+      <Text style={styles.deviceManufacturerData}>{item.manufacturerData ? item.manufacturerData.toString('hex') : 'N/A'}</Text>
     </View>
   );
 
@@ -118,7 +112,7 @@ const BluetoothScanner = () => {
       <Text style={styles.title}>Devices Found:</Text>
       {devices.length > 0 ? (
         devices.map((device) => (
-          <Text key={device.id}>{`Name: ${device.name || 'Unknown'}, ID: ${device.id}`}</Text>
+          <Text key={device.id}>{`Name: ${device.name || 'Unknown'}, ID: ${device.id}, Manufacturer Data: ${device.manufacturerData ? device.manufacturerData.toString('hex') : 'N/A'}`}</Text>
         ))
       ) : (
         <Text>No devices found</Text>
@@ -153,6 +147,10 @@ const styles = StyleSheet.create({
   deviceId: {
     fontSize: 12,
     color: '#666',
+  },
+  deviceManufacturerData: {
+    fontSize: 12,
+    color: '#999',
   },
 });
 

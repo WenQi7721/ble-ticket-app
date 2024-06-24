@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Button, Alert } from 'react-native';
+import { View, Text, StyleSheet, Button, Alert, TextInput } from 'react-native';
 import Peripheral, { Service, Characteristic } from 'react-native-peripheral';
 import uuid from 'react-native-uuid';
-import { Buffer } from 'buffer';
+import { encode } from 'base-64'; // Importing base-64 library
 
 const BluetoothPeripheral = () => {
   const [advertising, setAdvertising] = useState(false);
@@ -13,6 +13,7 @@ const BluetoothPeripheral = () => {
   const isListenerRegistered = useRef(false);
 
   useEffect(() => {
+    console.log('useEffect called');
     if (!isListenerRegistered.current) {
       const handleStateChange = (state) => {
         console.log('Bluetooth state changed:', state);
@@ -30,7 +31,6 @@ const BluetoothPeripheral = () => {
       isListenerRegistered.current = true;
 
       return () => {
-        // Ensure the listener is only added once
         if (advertising) {
           Peripheral.stopAdvertising()
             .then(() => console.log('Stopped advertising.'))
@@ -41,7 +41,8 @@ const BluetoothPeripheral = () => {
   }, [advertising]);
 
   const setupPeripheral = async () => {
-    if (advertising) return; // Prevent duplicate initialization
+    console.log('setupPeripheral called');
+    if (advertising) return;
 
     try {
       console.log('Setting up characteristic...');
@@ -49,6 +50,11 @@ const BluetoothPeripheral = () => {
         uuid: characteristicUUID,
         properties: ['read', 'write', 'notify'],
         permissions: ['readable', 'writeable'],
+        onWriteRequest: async (value, offset) => {
+          console.log('Received write request:', value);
+          await Peripheral.sendResponse(true, value);
+          Alert.alert('Payload Received', `Payload: ${value}`);
+        },
       });
 
       console.log('Characteristic set up:', characteristic);
@@ -65,17 +71,18 @@ const BluetoothPeripheral = () => {
 
       setTimeout(async () => {
         console.log('Starting advertising...');
-        
-        // Define manufacturer-specific data (example: company identifier 0x1234 and data 0x5678)
-        const manufacturerData = Buffer.from([0x34, 0x12, 0x78, 0x56]);
+
+        const payload = 'HELLO';
+        const base64Payload = encode(payload);
+        console.log('Base64 Payload:', base64Payload);
 
         try {
           const response = await Peripheral.startAdvertising({
-            name: 'Ticket 0.0',
+            name: 'TestPeripheral',
             serviceUuids: [serviceUUID],
-            manufacturerData: manufacturerData,
+            manufacturerData: base64Payload,
           });
-          console.log(response);
+          console.log('Advertising Response:', response);
           setAdvertising(true);
           console.log('Advertising started successfully');
         } catch (advertisingError) {
@@ -112,7 +119,6 @@ const BluetoothPeripheral = () => {
         onPress={checkAdvertisingStatus}
       />
       {error && <Text style={styles.error}>Error: {error}</Text>}
-      <Text style={styles.subtitle}>Advertising with Writable Characteristic</Text>
     </View>
   );
 };

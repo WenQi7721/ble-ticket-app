@@ -1,4 +1,3 @@
-// App.js
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import BluetoothPeripheral from './src/BluetoothPeripheral';
