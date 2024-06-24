@@ -72,8 +72,8 @@ const BluetoothScanner = () => {
         return;
       }
 
-      if (device) {
-        console.log('Device found:', device.name, device.id);
+      if (device && (device.name === 'Ticket')) {
+        console.log('Filtered device found:', device.name, device.id);
         setDevices((prevDevices) => {
           if (prevDevices.find((d) => d.id === device.id)) {
             return prevDevices;
@@ -82,6 +82,13 @@ const BluetoothScanner = () => {
         });
       }
     });
+
+    // Stop scan after 30 seconds
+    setTimeout(() => {
+      if (scanning) {
+        stopScan();
+      }
+    }, 30000); // 30 seconds
   };
 
   const stopScan = () => {

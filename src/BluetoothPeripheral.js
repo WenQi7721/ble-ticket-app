@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Button, Alert, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Button, Alert } from 'react-native';
 import Peripheral, { Service, Characteristic } from 'react-native-peripheral';
 import uuid from 'react-native-uuid';
+import { Buffer } from 'buffer';
 
 const BluetoothPeripheral = () => {
   const [advertising, setAdvertising] = useState(false);
-  const [receivedPayload, setReceivedPayload] = useState('');
   const [error, setError] = useState(null);
 
   const serviceUUID = uuid.v4();
@@ -49,12 +49,6 @@ const BluetoothPeripheral = () => {
         uuid: characteristicUUID,
         properties: ['read', 'write', 'notify'],
         permissions: ['readable', 'writeable'],
-        onWriteRequest: async (value, offset) => {
-          console.log('Received write request:', value);
-          await Peripheral.sendResponse(true, value);
-          Alert.alert('Payload Received', `Payload: ${value}`);
-          setReceivedPayload(value);
-        },
       });
 
       console.log('Characteristic set up:', characteristic);
@@ -71,10 +65,15 @@ const BluetoothPeripheral = () => {
 
       setTimeout(async () => {
         console.log('Starting advertising...');
+        
+        // Define manufacturer-specific data (example: company identifier 0x1234 and data 0x5678)
+        const manufacturerData = Buffer.from([0x34, 0x12, 0x78, 0x56]);
+
         try {
           const response = await Peripheral.startAdvertising({
             name: 'Ticket 0.0',
             serviceUuids: [serviceUUID],
+            manufacturerData: manufacturerData,
           });
           console.log(response);
           setAdvertising(true);
@@ -102,7 +101,7 @@ const BluetoothPeripheral = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Blsuetooth Peripheral</Text>
+      <Text style={styles.title}>Bluetooth Peripheral</Text>
       <Button
         title={advertising ? 'Advertising...' : 'Activate'}
         onPress={setupPeripheral}
@@ -114,12 +113,6 @@ const BluetoothPeripheral = () => {
       />
       {error && <Text style={styles.error}>Error: {error}</Text>}
       <Text style={styles.subtitle}>Advertising with Writable Characteristic</Text>
-      <TextInput
-        style={styles.input}
-        value={receivedPayload}
-        placeholder="Received payload will appear here"
-        editable={false}
-      />
     </View>
   );
 };
@@ -141,14 +134,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginVertical: 10,
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginTop: 20,
-    width: '100%',
-    paddingHorizontal: 10,
   },
   error: {
     color: 'red',
